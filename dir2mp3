@@ -1,0 +1,25 @@
+#!/bin/bash
+
+exts=(wma aac)
+
+cd "$1"
+if [ -f conversion.log ]; then
+    rm conversion.log
+fi
+
+function process_audio () {
+    file="$1"
+    ext="$2"
+    dest="${file%.${ext}}.mp3"
+    echo "  Converting '${file}' to '$(basename "${dest}")'"
+    echo "=== Processing ${file} ===" >> conversion.log
+    ffmpeg -loglevel fatal -y -i "${file}" -acodec libmp3lame -ab 320k "${dest}" >> conversion.log 2>&1 && rm "${file}"
+}
+
+export -f process_audio
+for ext in "${exts[@]}"; do
+    echo "Looking for *.${ext}"
+    search="*.${ext}"
+    export ext
+    find "$1" -type f -name "${search}" -exec bash -c 'process_audio "$0" "${ext}"' {} \;
+done
